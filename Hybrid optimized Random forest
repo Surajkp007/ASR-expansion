@@ -1,0 +1,54 @@
+import numpy as np
+from sklearn.ensemble import RandomForestRegressor
+from scipy.optimize import dual_annealing
+from cuckoopy import CuckooSearch
+
+# Define the objective function for optimization
+def objective_function(params, X, y):
+    n_estimators, max_depth, min_samples_split = params
+    model = RandomForestRegressor(n_estimators=int(n_estimators),
+                                  max_depth=int(max_depth),
+                                  min_samples_split=int(min_samples_split))
+    model.fit(X, y)
+    # Return negative mean squared error as the objective to minimize
+    return -np.mean((model.predict(X) - y) ** 2)
+
+# Perform Simulated Annealing optimization
+def simulated_annealing(X, y):
+    bounds = [(10, 100), (2, 20), (2, 20)]  # Define the bounds for each hyperparameter
+    result = dual_annealing(objective_function, bounds, args=(X, y), seed=0)
+    return result.x
+
+# Perform Cuckoo Search optimization
+def cuckoo_search(X, y):
+    n = X.shape[1]  # Number of features
+    cuckoo_search = CuckooSearch(objective_function, n, seed=0)
+    best_solution = cuckoo_search.run(X, y)
+    return best_solution
+
+# Hybrid optimization using Simulated Annealing and Cuckoo Search
+def hybrid_optimization(X, y):
+    # Perform Simulated Annealing optimization
+    sa_solution = simulated_annealing(X, y)
+    # Perform Cuckoo Search optimization
+    cs_solution = cuckoo_search(X, y)
+    # Combine the solutions from both optimization techniques
+    hybrid_solution = np.concatenate((sa_solution, cs_solution))
+    return hybrid_solution
+
+# Load your dataset and split it into features (X) and target variable (y)
+X = ...
+y = ...
+
+# Perform hybrid optimization to obtain the optimal hyperparameters
+optimal_hyperparameters = hybrid_optimization(X, y)
+
+# Train the Random Forest Regressor with the optimal hyperparameters
+n_estimators, max_depth, min_samples_split = optimal_hyperparameters
+model = RandomForestRegressor(n_estimators=int(n_estimators),
+                              max_depth=int(max_depth),
+                              min_samples_split=int(min_samples_split))
+model.fit(X, y)
+
+# Use the trained model for prediction
+predictions = model.predict(X_test)
